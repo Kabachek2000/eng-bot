@@ -14,15 +14,15 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from aiogram.types import Message, ReplyKeyboardRemove
 
-TOKEN = '6854443839:AAGe6vJ9lTJPmI651ysoU8m5hO0x2DRQOy8'
-
-bot = Bot(TOKEN)
-#dp = Dispatcher(bot)
+logging.basicConfig(level=logging.INFO)
+bot = Bot(token="6854443839:AAGe6vJ9lTJPmI651ysoU8m5hO0x2DRQOy8")
 dp = Dispatcher()
-
-@dp.message(Command("start"))
+#6854443839:AAGe6vJ9lTJPmI651ysoU8m5hO0x2DRQOy8
+store=10
+@dp.message(Command("store"))
 async def cmd_start(message: types.Message):
-    await message.answer("Hello!")
+    global store
+    await message.answer(f"Ваш счет: {store}")
 
 inlist=["respect", "base", "home","pen", "space"]
 
@@ -78,6 +78,7 @@ async def cmd_funk5(message: types.Message):
     inlist=["respect", "base", "home","pen", "space"]
     in1 = random.choice(inlist)
     k = funk5(in1)[1]
+    global store
     await message.answer("funk5 start")
     r=random.randint(0,2)
     f=[k[0],k[1],in1]
@@ -91,12 +92,18 @@ async def cmd_funk5(message: types.Message):
 
     @dp.message(F.text.lower() == k[0])
     async def with_puree(message: types.Message):
+        global store
+        store-=1
         await message.reply("Неверно")
     @dp.message(F.text.lower() == k[1])
     async def without_puree(message: types.Message):
+        global store
+        store-=1
         await message.reply("Неверно")
     @dp.message(F.text.lower() == in1)
     async def without_puree(message: types.Message):
+        global store
+        store+=1
         await message.reply("Верно", reply_markup=types.ReplyKeyboardRemove())
 
 class dopfunk1(StatesGroup):
@@ -105,16 +112,21 @@ class dopfunk1(StatesGroup):
 @dp.message(Command("funk1"))
 async def cmd_funk1(message: types.Message, state: FSMContext):
     in1 = random.choice(inlist)
+    global store
     await message.answer("funk1 start")
     await message.answer(in1)
     await state.set_state(dopfunk1.choosing_word)
     @dp.message(dopfunk1.choosing_word, F.text.in_(funk1(in1)))
     async def with_puree(message: types.Message, state: FSMContext):
+        global store
+        store+=1
         await state.clear()
-        await message.reply("Верно2", )
+        await message.reply("Верно", )
     @dp.message(dopfunk1.choosing_word, ~F.text.in_(funk1(in1)))
     async def with_puree(message: types.Message, state: FSMContext):
-        await message.reply("Неверно2")
+        global store
+        store-=1
+        await message.reply("Неверно")
 
 
 
