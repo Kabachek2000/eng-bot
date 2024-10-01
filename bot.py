@@ -14,7 +14,8 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, \
+    ReplyKeyboardMarkup
 
 from DAO import DAO
 
@@ -50,7 +51,13 @@ async def cmd_start(message: types.Message):
         database.addUser(message.from_user.id,
                          json.load(params)["score_for_activity"],
                          datetime.datetime.now())
-    await message.answer("Hello!")
+    await message.answer(
+        "Hello!",
+        reply_markup=ReplyKeyboardMarkup(keyboard=[
+            [KeyboardButton(text="/funk1"), KeyboardButton(text="/funk5")],
+            [KeyboardButton(text="/check-my-english")]
+        ])
+    )
 
 
 def funk5(a):
@@ -161,6 +168,37 @@ async def cmd_funk1(message: types.Message, state: FSMContext):
         curScore = database.getScore(message.from_user.id)
         database.setScore(message.from_user.id, curScore - 1)
         await message.reply("Неверно")
+
+
+@dp.message(Command("check-my-english"))
+async def level_check(message: types.Message, state: FSMContext):
+    updateTime(message.from_user.id)
+    await message.answer("Пройдите тест, чтобы узнать ваш уровень английского языка")
+    database.setEnglishLevel(message.from_user.id, 0)
+    with open("get_started.json", "r", encoding="utf8") as params:
+        questions = json.load(params)
+    states = [State(str(i)) for i in range(0, len(questions), +1)]
+    await message.answer(questions[0]["question"])
+    await state.set_state(states[0])
+
+    for i in range(0, len(states), +1):
+        @dp.message(states[i])
+        async def f(message: types.Message, state: FSMContext):
+            curState = int((await state.get_state()).split(":")[1])
+            print(curState)
+            curLevel = database.getEnglishLevel(message.from_user.id)
+            if (message.text == questions[curState]["answer"]):
+                database.setEnglishLevel(message.from_user.id, curLevel + 1)
+                curLevel += 1
+                await message.answer("Верно")
+            else:
+                await message.answer("Ошибка")
+            if curState + 1 < len(states):
+                await state.set_state(states[curState + 1])
+                await message.answer(questions[curState + 1]["question"])
+            else:
+                await state.set_state(State())
+                await message.answer(f"Ваш балл {curLevel}")
 
 
 async def main():
